@@ -1,0 +1,1763 @@
+<!DOCTYPE html>
+<html lang="si">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>සම්පූර්ණ Chat යෙදුම (Admin සහිත)</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Sinhala:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #e63946;
+            --primary-light: #ff6b6b;
+            --secondary: #b51717;
+            --dark: #1b263b;
+            --light: #f8f9fa;
+            --danger: #f72585;
+            --success: #4cc9f0;
+            --text: #2b2d42;
+            --bg: #f8f9fa;
+            --card-bg: #ffffff;
+            --border: #dee2e6;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Noto Sans Sinhala', Arial, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+        }
+
+        /* Auth container */
+        .auth-container {
+            max-width: 400px;
+            margin: 50px auto;
+            padding: 30px;
+            background-color: var(--card-bg);
+            border-radius: 15px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+        }
+
+        .auth-title {
+            text-align: center;
+            margin-bottom: 20px;
+            color: var(--primary);
+        }
+
+        .auth-form {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .form-label {
+            font-weight: 500;
+        }
+
+        .form-input {
+            padding: 12px 15px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-family: inherit;
+            font-size: 16px;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        .auth-btn {
+            padding: 12px;
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            font-family: inherit;
+            font-size: 16px;
+        }
+
+        .auth-btn:hover {
+            background-color: var(--secondary);
+        }
+
+        .auth-switch {
+            text-align: center;
+            margin-top: 15px;
+        }
+
+        .auth-link {
+            color: var(--primary);
+            cursor: pointer;
+            text-decoration: underline;
+        }
+
+        /* App container */
+        .app-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            display: grid;
+            grid-template-columns: 300px 1fr;
+            gap: 20px;
+            height: 100vh;
+            display: none;
+            position: relative;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            background-color: var(--card-bg);
+            border-radius: 15px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            transition: transform 0.3s ease;
+        }
+
+        .admin-sidebar {
+            display: none;
+        }
+
+        .sidebar-toggle {
+            position: absolute;
+            left: 10px;
+            top: 10px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            z-index: 100;
+        }
+
+        .user-profile {
+            display: flex;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .avatar {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background-color: var(--primary);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            font-weight: bold;
+            margin-right: 15px;
+            background-size: cover;
+            background-position: center;
+        }
+
+        .user-info h3 {
+            font-size: 18px;
+            margin-bottom: 5px;
+        }
+
+        .user-info p {
+            color: #6c757d;
+            font-size: 14px;
+        }
+
+        .chat-actions {
+            margin-bottom: 20px;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 10px 15px;
+            border-radius: 8px;
+            border: none;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-family: inherit;
+        }
+
+        .btn-primary {
+            background-color: var(--primary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background-color: var(--secondary);
+        }
+
+        .btn-outline {
+            background-color: transparent;
+            border: 1px solid var(--border);
+            color: var(--text);
+        }
+
+        .btn-outline:hover {
+            background-color: var(--light);
+        }
+
+        .btn-sm {
+            padding: 8px 12px;
+            font-size: 14px;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 10px;
+        }
+
+        /* Admin specific styles */
+        .user-list {
+            margin-top: 20px;
+            overflow-y: auto;
+            flex: 1;
+        }
+
+        .user-item {
+            padding: 10px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .user-actions {
+            display: flex;
+            gap: 5px;
+        }
+
+        .ban-btn {
+            background-color: var(--danger);
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 3px 8px;
+            font-size: 12px;
+            cursor: pointer;
+        }
+
+        .admin-badge {
+            background-color: var(--primary);
+            color: white;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 12px;
+            margin-left: 5px;
+        }
+
+        /* Chat area */
+        .chat-container {
+            display: flex;
+            flex-direction: column;
+            background-color: var(--card-bg);
+            border-radius: 15px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+            overflow: hidden;
+            height: 100%;
+        }
+
+        .chat-header {
+            padding: 20px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .chat-title {
+            font-size: 20px;
+            font-weight: 700;
+        }
+
+        /* User profile dropdown */
+        .user-profile-dropdown {
+            position: relative;
+            display: inline-block;
+        }
+
+        .dropdown-toggle {
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+        }
+
+        .dropdown-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background-color: var(--primary);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            background-size: cover;
+            background-position: center;
+            transition: transform 0.2s;
+        }
+
+        .dropdown-avatar:hover {
+            transform: scale(1.05);
+        }
+
+        .dropdown-menu {
+            position: absolute;
+            right: 0;
+            top: 50px;
+            width: 280px;
+            background-color: var(--card-bg);
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+            z-index: 1000;
+            display: none;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .dropdown-menu.show {
+            display: flex;
+        }
+
+        .dropdown-header {
+            padding: 16px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .dropdown-avatar-large {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            background-color: var(--primary);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            font-weight: bold;
+            background-size: cover;
+            background-position: center;
+            flex-shrink: 0;
+        }
+
+        .dropdown-user-info {
+            flex: 1;
+            overflow: hidden;
+        }
+
+        .dropdown-user-info h3 {
+            font-size: 16px;
+            margin-bottom: 4px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .dropdown-user-info p {
+            font-size: 14px;
+            color: #6c757d;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .dropdown-divider {
+            height: 1px;
+            background-color: var(--border);
+            margin: 0;
+        }
+
+        .dropdown-item {
+            padding: 12px 16px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: none;
+            border: none;
+            font-family: inherit;
+            font-size: 14px;
+            color: var(--text);
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .dropdown-item svg {
+            width: 16px;
+            height: 16px;
+            color: #6c757d;
+        }
+
+        .dropdown-item:hover {
+            background-color: var(--light);
+        }
+
+        .dropdown-item:active {
+            background-color: #e9ecef;
+        }
+
+        .chat-messages {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            background-color: #f5f7fb;
+            background-image: 
+                radial-gradient(#4362ee0a 1px, transparent 1px),
+                radial-gradient(#4362ee0a 1px, transparent 1px);
+            background-size: 20px 20px;
+            background-position: 0 0, 10px 10px;
+        }
+
+        .message {
+            display: flex;
+            margin-bottom: 15px;
+            max-width: 80%;
+        }
+
+        .message-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background-color: var(--primary);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            font-weight: bold;
+            margin-right: 10px;
+            background-size: cover;
+            background-position: center;
+            flex-shrink: 0;
+        }
+
+        .message-content {
+            padding: 12px 16px;
+            border-radius: 12px;
+            position: relative;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+            word-wrap: break-word;
+        }
+
+        .received .message-content {
+            background-color: white;
+            border-top-left-radius: 4px;
+        }
+
+        .sent {
+            margin-left: auto;
+            flex-direction: row-reverse;
+        }
+
+        .sent .message-avatar {
+            margin-right: 0;
+            margin-left: 10px;
+        }
+
+        .sent .message-content {
+            background-color: var(--primary);
+            color: white;
+            border-top-right-radius: 4px;
+        }
+
+        .message-info {
+            display: flex;
+            align-items: center;
+            margin-top: 5px;
+            font-size: 12px;
+            opacity: 0.8;
+        }
+
+        .received .message-info {
+            color: #6c757d;
+        }
+
+        .sent .message-info {
+            color: rgba(255, 255, 255, 0.8);
+            justify-content: flex-end;
+        }
+
+        .message-time {
+            margin-left: 8px;
+        }
+
+        .message-img {
+            max-width: 100%;
+            max-height: 250px;
+            border-radius: 8px;
+            margin-top: 8px;
+            display: block;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .message-img:hover {
+            transform: scale(1.02);
+        }
+
+        /* Message input */
+        .chat-input-container {
+            padding: 15px 20px;
+            border-top: 1px solid var(--border);
+            background-color: white;
+        }
+
+        .message-form {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .message-input {
+            flex: 1;
+            padding: 12px 15px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-family: inherit;
+            font-size: 16px;
+            resize: none;
+            min-height: 50px;
+            max-height: 120px;
+            transition: border-color 0.3s;
+        }
+
+        .message-input:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        .input-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .action-btn {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: transparent;
+            border: none;
+            color: #6c757d;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .action-btn:hover {
+            background-color: var(--light);
+            color: var(--primary);
+        }
+
+        .action-btn.active {
+            color: var(--primary);
+        }
+
+        .emoji-picker {
+            position: absolute;
+            bottom: 70px;
+            right: 20px;
+            background-color: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            padding: 15px;
+            width: 300px;
+            max-height: 250px;
+            overflow-y: auto;
+            z-index: 100;
+            display: none;
+            grid-template-columns: repeat(8, 1fr);
+            gap: 5px;
+        }
+
+        .emoji-btn {
+            font-size: 24px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 5px;
+            border-radius: 5px;
+        }
+
+        .emoji-btn:hover {
+            background-color: var(--light);
+        }
+
+        /* Image preview */
+        .image-preview {
+            display: none;
+            margin-top: 10px;
+            position: relative;
+            width: fit-content;
+        }
+        
+        .preview-image {
+            max-width: 150px;
+            max-height: 150px;
+            border-radius: 8px;
+            border: 2px solid #ddd;
+        }
+        
+        .remove-preview {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            background: var(--danger);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 25px;
+            height: 25px;
+            font-size: 12px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Fullscreen image viewer */
+        .fullscreen-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.9);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .fullscreen-image {
+            max-width: 90%;
+            max-height: 90%;
+            object-fit: contain;
+        }
+        
+        .close-fullscreen {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            color: white;
+            font-size: 30px;
+            cursor: pointer;
+            background: rgba(0,0,0,0.5);
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Date separator */
+        .date-separator {
+            text-align: center;
+            margin: 15px 0;
+            color: #6c757d;
+            font-size: 14px;
+            position: relative;
+        }
+
+        .date-separator::before,
+        .date-separator::after {
+            content: "";
+            flex: 1;
+            border-bottom: 1px solid #dee2e6;
+            margin: auto;
+        }
+
+        .date-separator::before {
+            margin-right: 10px;
+        }
+
+        .date-separator::after {
+            margin-left: 10px;
+        }
+
+        /* Profile picture upload */
+        .profile-pic-upload {
+            display: none;
+        }
+
+        .profile-pic-btn {
+            position: absolute;
+            bottom: 0;
+            right: 0;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            font-size: 12px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .avatar-container {
+            position: relative;
+            width: fit-content;
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 3px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #c1c1c1;
+            border-radius: 3px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #a8a8a8;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .app-container {
+                grid-template-columns: 1fr;
+                padding: 10px;
+            }
+            
+            .sidebar {
+                position: fixed;
+                top: 0;
+                left: 0;
+                height: 100%;
+                width: 280px;
+                z-index: 99;
+                transform: translateX(-100%);
+            }
+            
+            .sidebar.show {
+                transform: translateX(0);
+            }
+            
+            .sidebar-toggle {
+                display: flex;
+            }
+            
+            .chat-container {
+                margin-left: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Authentication Container -->
+    <div class="auth-container" id="auth-container">
+        <h2 class="auth-title" id="auth-title">Login</h2>
+        <form class="auth-form" id="auth-form">
+            <div class="form-group" id="name-group" style="display: none;">
+                <label for="name" class="form-label">Name</label>
+                <input type="text" id="name" class="form-input" placeholder="Youගේ Name">
+            </div>
+            <div class="form-group">
+                <label for="email" class="form-label">Email</label>
+                <input type="email" id="email" class="form-input" placeholder="Youගේ Email">
+            </div>
+            <div class="form-group">
+                <label for="password" class="form-label">Password</label>
+                <input type="password" id="password" class="form-input" placeholder="Youගේ Password">
+            </div>
+            <div class="form-group" id="profile-pic-group" style="display: none;">
+                <label for="profile-pic" class="form-label">Profile Picture</label>
+                <input type="file" id="profile-pic" class="form-input profile-pic-upload" accept="image/*">
+            </div>
+            <button type="submit" class="auth-btn" id="auth-btn">Login</button>
+        </form>
+        <div class="auth-switch">
+            <span id="auth-switch-text">Don't have an account?</span>
+            <span class="auth-link" id="auth-switch-link">Register</span>
+        </div>
+    </div>
+
+    <!-- App Container -->
+    <div class="app-container" id="app-container">
+        <!-- Sidebar Toggle Button -->
+        <button class="sidebar-toggle" id="sidebar-toggle">☰</button>
+        
+        <!-- Admin Sidebar -->
+        <div class="sidebar admin-sidebar" id="admin-sidebar">
+            <div class="user-profile">
+                <div class="avatar-container">
+                    <div class="avatar" id="user-avatar"></div>
+                    <button class="profile-pic-btn" id="profile-pic-btn">+</button>
+                    <input type="file" id="profile-pic-upload" class="profile-pic-upload" accept="image/*">
+                </div>
+                <div class="user-info">
+                    <h3 id="username-display">User</h3>
+                    <p id="user-role">Admin</p>
+                </div>
+            </div>
+
+            <div class="chat-actions">
+                <div class="btn-group">
+                    <button class="btn btn-primary btn-sm" id="new-chat-btn">
+                        New Chat
+                    </button>
+                    <button class="btn btn-outline btn-sm" id="clear-chat">
+                        Clear Chat
+                    </button>
+                </div>
+            </div>
+            
+            <div class="user-list" id="user-list">
+                <h4 style="margin-bottom: 10px;">User List</h4>
+                <!-- User List JavaScript මගින් පුරවනු ලැබේ -->
+            </div>
+        </div>
+
+        <!-- Chat area -->
+        <div class="chat-container">
+            <div class="chat-header">
+                <h2 class="chat-title">Chat</h2>
+                <div class="user-profile-dropdown">
+                    <div class="dropdown-toggle" id="profile-dropdown-toggle">
+                        <div class="dropdown-avatar" id="dropdown-avatar"></div>
+                    </div>
+                    <div class="dropdown-menu" id="dropdown-menu">
+                        <div class="dropdown-header">
+                            <div class="avatar-container">
+                                <div class="dropdown-avatar-large" id="dropdown-avatar-large"></div>
+                                <button class="profile-pic-btn" id="dropdown-profile-pic-btn">+</button>
+                                <input type="file" id="dropdown-profile-pic-upload" class="profile-pic-upload" accept="image/*">
+                            </div>
+                            <div class="dropdown-user-info">
+                                <h3 id="dropdown-username">User</h3>
+                                <p id="dropdown-email">email@example.com</p>
+                            </div>
+                        </div>
+                        <div class="dropdown-divider"></div>
+                        <button class="dropdown-item" id="edit-profile-btn">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                            </svg>
+                            Name වෙනස් කරන්න
+                        </button>
+                        <button class="dropdown-item" id="logout-btn">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                                <polyline points="16 17 21 12 16 7"></polyline>
+                                <line x1="21" y1="12" x2="9" y2="12"></line>
+                            </svg>
+                            Logout
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="chat-messages" id="chat-messages">
+                <!-- Messages will appear here -->
+            </div>
+
+            <div class="chat-input-container">
+                <form class="message-form" id="message-form">
+                    <div class="input-actions">
+                        <button type="button" class="action-btn" id="emoji-btn">
+                            😊
+                        </button>
+                        <button type="button" class="action-btn" id="image-btn">
+                            📷
+                        </button>
+                        <input type="file" id="file-input" accept="image/*" style="display: none;">
+                    </div>
+                    <textarea class="message-input" id="message-input" 
+                        placeholder="Type a message..." rows="1"></textarea>
+                    
+                    <div class="image-preview" id="image-preview">
+                        <img class="preview-image" id="preview-image">
+                        <button class="remove-preview" id="remove-preview">×</button>
+                    </div>
+                        
+                    <button type="submit" class="action-btn" style="color: var(--primary);">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="22" y1="2" x2="11" y2="13"></line>
+                            <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                        </svg>
+                    </button>
+                </form>
+                
+                <div class="emoji-picker" id="emoji-picker">
+                    <!-- Emojis will be added by JavaScript -->
+                </div>
+                
+                <div class="fullscreen-overlay" id="fullscreen-overlay">
+                    <span class="close-fullscreen" id="close-fullscreen">×</span>
+                    <img class="fullscreen-image" id="fullscreen-image">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // DOM Elements
+        const authContainer = document.getElementById('auth-container');
+        const appContainer = document.getElementById('app-container');
+        const authTitle = document.getElementById('auth-title');
+        const authForm = document.getElementById('auth-form');
+        const nameGroup = document.getElementById('name-group');
+        const profilePicGroup = document.getElementById('profile-pic-group');
+        const emailInput = document.getElementById('email');
+        const passwordInput = document.getElementById('password');
+        const nameInput = document.getElementById('name');
+        const profilePicInput = document.getElementById('profile-pic');
+        const authBtn = document.getElementById('auth-btn');
+        const authSwitchText = document.getElementById('auth-switch-text');
+        const authSwitchLink = document.getElementById('auth-switch-link');
+        const dropdownProfilePicBtn = document.getElementById('dropdown-profile-pic-btn');
+const dropdownProfilePicUpload = document.getElementById('dropdown-profile-pic-upload');
+        const nameChangeModal = document.getElementById('name-change-modal');
+const nameChangeForm = document.getElementById('name-change-form');
+const nameChangeInput = document.getElementById('name-change-input');
+const nameChangeCancel = document.getElementById('name-change-cancel');
+const nameChangeConfirm = document.getElementById('name-change-confirm');
+        
+        
+        // New dropdown elements
+        const profileDropdownToggle = document.getElementById('profile-dropdown-toggle');
+        const dropdownMenu = document.getElementById('dropdown-menu');
+        const dropdownAvatar = document.getElementById('dropdown-avatar');
+        const dropdownAvatarLarge = document.getElementById('dropdown-avatar-large');
+        const dropdownUsername = document.getElementById('dropdown-username');
+        const dropdownEmail = document.getElementById('dropdown-email');
+        const editProfileBtn = document.getElementById('edit-profile-btn');
+        const logoutBtn = document.getElementById('logout-btn');
+
+        const chatMessages = document.getElementById('chat-messages');
+        const messageForm = document.getElementById('message-form');
+        const messageInput = document.getElementById('message-input');
+        const emojiBtn = document.getElementById('emoji-btn');
+        const emojiPicker = document.getElementById('emoji-picker');
+        const imageBtn = document.getElementById('image-btn');
+        const fileInput = document.getElementById('file-input');
+        const newChatBtn = document.getElementById('new-chat-btn');
+        const clearChatBtn = document.getElementById('clear-chat');
+        const usernameDisplay = document.getElementById('username-display');
+        const userAvatar = document.getElementById('user-avatar');
+        const imagePreview = document.getElementById('image-preview');
+        const previewImage = document.getElementById('preview-image');
+        const removePreview = document.getElementById('remove-preview');
+        const fullscreenOverlay = document.getElementById('fullscreen-overlay');
+        const fullscreenImage = document.getElementById('fullscreen-image');
+        const closeFullscreen = document.getElementById('close-fullscreen');
+        const profilePicBtn = document.getElementById('profile-pic-btn');
+        const profilePicUpload = document.getElementById('profile-pic-upload');
+        
+        
+        // Admin elements
+        const adminSidebar = document.getElementById('admin-sidebar');
+        const userList = document.getElementById('user-list');
+        const userRoleDisplay = document.getElementById('user-role');
+        const sidebarToggle = document.getElementById('sidebar-toggle');
+
+        // App state
+        let isLoginMode = true;
+        let currentUser = null;
+        let users = JSON.parse(localStorage.getItem('chat-users')) || [];
+        let messages = JSON.parse(localStorage.getItem('chat-messages')) || [];
+        let selectedImage = null;
+        
+        // Admin configuration
+        const ADMIN_EMAILS = ['admin@example.com']; // Admin emails
+        const ADMIN_PASSWORD = 'admin123'; // Default admin password
+
+        // Initialize the app
+        function init() {
+            // Check if admin exists, if not create one
+            if (!users.some(user => ADMIN_EMAILS.includes(user.email))) {
+                createAdminAccount();
+            }
+            
+            // Check if user is already logged in
+            const loggedInUser = localStorage.getItem('chat-current-user');
+            if (loggedInUser) {
+                currentUser = JSON.parse(loggedInUser);
+                showApp();
+            } else {
+                showAuth();
+            }
+
+            // Setup event listeners
+            setupAuthListeners();
+            setupChatListeners();
+        }
+        
+        // Create default admin account
+        function createAdminAccount() {
+            const adminUser = {
+                id: 'admin-' + Date.now().toString(),
+                name: 'Admin',
+                email: ADMIN_EMAILS[0],
+                password: ADMIN_PASSWORD,
+                profilePic: null,
+                isAdmin: true
+            };
+            
+            users.push(adminUser);
+            localStorage.setItem('chat-users', JSON.stringify(users));
+        }
+
+        // Show authentication screen
+        function showAuth() {
+            authContainer.style.display = 'block';
+            appContainer.style.display = 'none';
+            updateAuthUI();
+        }
+
+        // Show chat app
+        function showApp() {
+            authContainer.style.display = 'none';
+            appContainer.style.display = 'grid';
+            
+            // Check if user is admin
+            const isAdmin = ADMIN_EMAILS.includes(currentUser.email);
+            
+            // Update UI based on role
+            if (isAdmin) {
+                adminSidebar.style.display = 'flex';
+                userRoleDisplay.textContent = 'Admin';
+                loadUserList();
+            } else {
+                adminSidebar.style.display = 'none';
+                userRoleDisplay.textContent = 'User';
+            }
+            
+            // Update user info
+            usernameDisplay.textContent = currentUser.name;
+            userAvatar.textContent = currentUser.name.charAt(0);
+            dropdownUsername.textContent = currentUser.name;
+            dropdownEmail.textContent = currentUser.email;
+            
+            if (currentUser.profilePic) {
+                userAvatar.style.backgroundImage = `url(${currentUser.profilePic})`;
+                userAvatar.textContent = '';
+                dropdownAvatar.style.backgroundImage = `url(${currentUser.profilePic})`;
+                dropdownAvatar.textContent = '';
+                dropdownAvatarLarge.style.backgroundImage = `url(${currentUser.profilePic})`;
+                dropdownAvatarLarge.textContent = '';
+            } else {
+                dropdownAvatar.textContent = currentUser.name.charAt(0);
+                dropdownAvatarLarge.textContent = currentUser.name.charAt(0);
+            }
+            
+            displayMessages();
+        }
+        
+        // Toggle sidebar visibility
+        function toggleSidebar() {
+            adminSidebar.classList.toggle('show');
+        }
+        
+        // Load user list for admin
+        function loadUserList() {
+            userList.innerHTML = '<h4 style="margin-bottom: 10px;">User List</h4>';
+            
+            users.forEach(user => {
+                if (user.email === currentUser.email) return; // Skip current admin
+                
+                const userItem = document.createElement('div');
+                userItem.className = 'user-item';
+                
+                // Check if user is admin
+                const isUserAdmin = ADMIN_EMAILS.includes(user.email);
+                
+                userItem.innerHTML = `
+                    <div>
+                        <strong>${user.name}</strong>
+                        ${isUserAdmin ? '<span class="admin-badge">Admin</span>' : ''}
+                        <br>
+                        <small>${user.email}</small>
+                    </div>
+                    <div class="user-actions">
+                        ${!isUserAdmin ? `<button class="ban-btn" data-email="${user.email}">Ban</button>` : ''}
+                    </div>
+                `;
+                
+                userList.appendChild(userItem);
+            });
+            
+            // Add event listeners to ban buttons
+            document.querySelectorAll('.ban-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const email = e.target.getAttribute('data-email');
+                    if (confirm(`Youට ඇත්තටම ${email} ලිපිනය සහිත Userයා Ban කිරීමට අවශ්‍යද?`)) {
+                        banUser(email);
+                    }
+                });
+            });
+        }
+        
+        // Ban a user
+        function banUser(email) {
+            // Remove user from users array
+            users = users.filter(user => user.email !== email);
+            localStorage.setItem('chat-users', JSON.stringify(users));
+            
+            // If banned user is currently logged in, log them out
+            const bannedUser = JSON.parse(localStorage.getItem('chat-current-user'));
+            if (bannedUser && bannedUser.email === email) {
+                localStorage.removeItem('chat-current-user');
+            }
+            
+            // Reload user list
+            loadUserList();
+            
+            alert('Userයා සාර්ථකව Ban කරන ලදී');
+        }
+
+        // Update authentication UI based on mode (login/register)
+        function updateAuthUI() {
+            if (isLoginMode) {
+                authTitle.textContent = 'Login';
+                authBtn.textContent = 'Login';
+                authSwitchText.textContent = "Don't have an account?";
+                authSwitchLink.textContent = 'Register';
+                nameGroup.style.display = 'none';
+                profilePicGroup.style.display = 'none';
+            } else {
+                authTitle.textContent = 'Register';
+                authBtn.textContent = 'Register';
+                authSwitchText.textContent = 'Already have an account?';
+                authSwitchLink.textContent = 'Login';
+                nameGroup.style.display = 'flex';
+                profilePicGroup.style.display = 'flex';
+            }
+        }
+
+        // Setup authentication event listeners
+        function setupAuthListeners() {
+            // Switch between login and register
+            authSwitchLink.addEventListener('click', () => {
+                isLoginMode = !isLoginMode;
+                updateAuthUI();
+            });
+
+            // Form submission
+            authForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                const email = emailInput.value.trim();
+                const password = passwordInput.value.trim();
+                const name = nameInput.value.trim();
+                
+                if (isLoginMode) {
+                    // Login
+                    const user = users.find(u => u.email === email && u.password === password);
+                    if (user) {
+                        currentUser = user;
+                        localStorage.setItem('chat-current-user', JSON.stringify(currentUser));
+                        showApp();
+                    } else {
+                        alert('අවලංගු Email හෝ Password!');
+                    }
+                } else {
+                    // Register
+                    if (!name || !email || !password) {
+                        alert('Please fill in all fields!');
+                        return;
+                    }
+                    
+                    // Check if user already exists
+                    if (users.some(u => u.email === email)) {
+                        alert('මෙම Email සමඟ දැනටමත් ගිණුමක් පවතී!');
+                        return;
+                    }
+                    
+                    // Handle profile picture upload
+                    const profilePicFile = profilePicInput.files[0];
+                    let profilePic = null;
+                    
+                    if (profilePicFile) {
+                        const reader = new FileReader();
+                        reader.onload = (e) => {
+                            profilePic = e.target.result;
+                            completeRegistration(email, password, name, profilePic);
+                        };
+                        reader.readAsDataURL(profilePicFile);
+                    } else {
+                        completeRegistration(email, password, name, null);
+                    }
+                }
+            });
+        }
+
+        // Complete user registration
+        function completeRegistration(email, password, name, profilePic) {
+            const newUser = {
+                id: Date.now().toString(),
+                name,
+                email,
+                password,
+                profilePic,
+                isAdmin: ADMIN_EMAILS.includes(email)
+            };
+            
+            users.push(newUser);
+            localStorage.setItem('chat-users', JSON.stringify(users));
+            
+            currentUser = newUser;
+            localStorage.setItem('chat-current-user', JSON.stringify(currentUser));
+            
+            showApp();
+        }
+
+        // Setup chat event listeners
+        function setupChatListeners() {
+            // Sidebar toggle
+            sidebarToggle.addEventListener('click', toggleSidebar);
+            
+            // Close sidebar when clicking outside on mobile
+            document.addEventListener('click', (e) => {
+                if (window.innerWidth <= 768 && 
+                    !e.target.closest('.sidebar') && 
+                    !e.target.closest('.sidebar-toggle') &&
+                    adminSidebar.classList.contains('show')) {
+                    toggleSidebar();
+                }
+            });
+
+            // Profile dropdown toggle
+            profileDropdownToggle.addEventListener('click', (e) => {
+                e.stopPropagation();
+                dropdownMenu.classList.toggle('show');
+            });
+
+            // Close dropdown when clicking outside
+            document.addEventListener('click', () => {
+                dropdownMenu.classList.remove('show');
+            });
+
+            // Profile picture upload
+            profilePicBtn.addEventListener('click', () => {
+                profilePicUpload.click();
+            });
+            
+            profilePicUpload.addEventListener('change', (e) => {
+                const file = e.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = (event) => {
+                        // Update current user's profile picture
+                        currentUser.profilePic = event.target.result;
+                        localStorage.setItem('chat-current-user', JSON.stringify(currentUser));
+                        
+                        // Update in users array
+                        const userIndex = users.findIndex(u => u.id === currentUser.id);
+                        if (userIndex !== -1) {
+                            users[userIndex].profilePic = event.target.result;
+                            localStorage.setItem('chat-users', JSON.stringify(users));
+                        }
+                        
+                        // Update UI
+                        userAvatar.style.backgroundImage = `url(${event.target.result})`;
+                        userAvatar.textContent = '';
+                        dropdownAvatar.style.backgroundImage = `url(${event.target.result})`;
+                        dropdownAvatar.textContent = '';
+                        dropdownAvatarLarge.style.backgroundImage = `url(${event.target.result})`;
+                        dropdownAvatarLarge.textContent = '';
+                    };
+                    reader.readAsDataURL(file);
+                }
+            });
+            
+            // Logout button
+            logoutBtn.addEventListener('click', () => {
+                localStorage.removeItem('chat-current-user');
+                currentUser = null;
+                showAuth();
+            });
+            
+            // New chat button
+            newChatBtn.addEventListener('click', () => {
+                if (messages.length > 0 && !confirm('Youට ඇත්තටම New Chatක් ආරම්භ කිරීමට අවශ්‍යද? වත්මන් Chatයේ ඉතිහාසය මකා දැමෙනු ඇත.')) {
+                    return;
+                }
+                messages = [];
+                localStorage.setItem('chat-messages', JSON.stringify(messages));
+                displayMessages();
+            });
+            
+            // Clear chat button
+            clearChatBtn.addEventListener('click', () => {
+                if (confirm('Youට ඇත්තටම Chat මැකීමට අවශ්‍යද? මෙය ආපසු හැරවිය නොහැක.')) {
+                    messages = [];
+                    localStorage.setItem('chat-messages', JSON.stringify(messages));
+                    displayMessages();
+                }
+            });
+            
+            // Initialize emoji picker
+            initEmojiPicker();
+            
+            // Initialize image upload
+            initImageUpload();
+        }
+
+        // Format time
+        function formatTime(dateString) {
+            const date = new Date(dateString);
+            return date.toLocaleTimeString('si-LK', { hour: '2-digit', minute: '2-digit' });
+        }
+
+        // Format date
+        function formatDate(dateString) {
+            const date = new Date(dateString);
+            const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+            return date.toLocaleDateString('si-LK', options);
+        }
+
+        // Display messages
+        function displayMessages() {
+            chatMessages.innerHTML = '';
+            
+            let currentDate = '';
+            
+            messages.forEach(msg => {
+                // Add date separator if needed
+                const msgDate = formatDate(msg.timestamp);
+                if (msgDate !== currentDate) {
+                    currentDate = msgDate;
+                    const dateDiv = document.createElement('div');
+                    dateDiv.className = 'date-separator';
+                    dateDiv.textContent = msgDate;
+                    chatMessages.appendChild(dateDiv);
+                }
+                
+                const messageDiv = document.createElement('div');
+                messageDiv.className = `message ${msg.senderId === currentUser.id ? 'sent' : 'received'}`;
+                
+                // Find sender info
+                const sender = users.find(u => u.id === msg.senderId) || { 
+                    name: 'නොදන්නා User', 
+                    profilePic: null 
+                };
+                
+                let content = `
+                    <div class="message-avatar" style="${sender.profilePic ? `background-image: url(${sender.profilePic})` : ''}">
+                        ${sender.profilePic ? '' : sender.name.charAt(0)}
+                    </div>
+                    <div class="message-content">
+                        ${msg.text}
+                        ${msg.image ? `<img src="${msg.image}" class="message-img">` : ''}
+                        <div class="message-info">
+                            ${msg.senderId === currentUser.id ? 'You' : sender.name}
+                            <span class="message-time">${formatTime(msg.timestamp)}</span>
+                        </div>
+                    </div>
+                `;
+                
+                messageDiv.innerHTML = content;
+                chatMessages.appendChild(messageDiv);
+            });
+            
+            // Setup event listeners for images
+            setupImageClickHandlers();
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        // Initialize emoji picker
+        function initEmojiPicker() {
+            const emojis = ['😀', '😃', '😄', '😁', '😆', '😅', '😂', '🤣', '😊', '😇', 
+                           '🙂', '🙃', '😉', '😌', '😍', '🥰', '😘', '😗', '😙', '😚', 
+                           '😋', '😛', '😝', '😜', '🤪', '🤨', '🧐', '🤓', '😎', '🥸', 
+                           '🤩', '🥳', '😏', '😒', '😞', '😔', '😟', '😕', '🙁', '☹️', 
+                           '😣', '😖', '😫', '😩', '🥺', '😢', '😭', '😤', '😠', '😡'];
+            
+            emojiPicker.innerHTML = '';
+            
+            emojis.forEach(emoji => {
+                const btn = document.createElement('button');
+                btn.className = 'emoji-btn';
+                btn.textContent = emoji;
+                btn.addEventListener('click', () => {
+                    messageInput.value += emoji;
+                    messageInput.focus();
+                });
+                emojiPicker.appendChild(btn);
+            });
+
+            emojiBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                emojiPicker.style.display = emojiPicker.style.display === 'grid' ? 'none' : 'grid';
+            });
+
+            // Close emoji picker when clicking outside
+            document.addEventListener('click', () => {
+                emojiPicker.style.display = 'none';
+            });
+        }
+
+        // Image upload handling
+        function initImageUpload() {
+            imageBtn.addEventListener('click', () => {
+                fileInput.click();
+            });
+
+            fileInput.addEventListener('change', (e) => {
+                const file = e.target.files[0];
+                if (file) {
+                    // Check if file is an image
+                    if (!file.type.match('image.*')) {
+                        alert('Please select a valid image file!');
+                        return;
+                    }
+                    
+                    // Check file size (5MB limit)
+                    if (file.size > 5 * 1024 * 1024) {
+                        alert('Image 5MB ට වඩා විශාල නොවිය යුතුය!');
+                        return;
+                    }
+                    
+                    const reader = new FileReader();
+                    reader.onload = (event) => {
+                        // Show preview instead of immediately sending
+                        selectedImage = event.target.result;
+                        previewImage.src = selectedImage;
+                        imagePreview.style.display = 'block';
+                    };
+                    reader.readAsDataURL(file);
+                }
+            });
+
+            // Remove preview button
+            removePreview.addEventListener('click', () => {
+                imagePreview.style.display = 'none';
+                selectedImage = null;
+                fileInput.value = '';
+            });
+        }
+
+        // Fullscreen image viewer
+        function setupImageClickHandlers() {
+            // Add click event to all message images
+            document.querySelectorAll('.message-img').forEach(img => {
+                img.addEventListener('click', () => {
+                    fullscreenImage.src = img.src;
+                    fullscreenOverlay.style.display = 'flex';
+                    document.body.style.overflow = 'hidden';
+                });
+            });
+            
+            // Close fullscreen viewer
+            closeFullscreen.addEventListener('click', () => {
+                fullscreenOverlay.style.display = 'none';
+                document.body.style.overflow = 'auto';
+            });
+            
+            // Close when clicking outside image
+            fullscreenOverlay.addEventListener('click', (e) => {
+                if (e.target === fullscreenOverlay) {
+                    fullscreenOverlay.style.display = 'none';
+                    document.body.style.overflow = 'auto';
+                }
+            });
+            
+            // Close with ESC key
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape' && fullscreenOverlay.style.display === 'flex') {
+                    fullscreenOverlay.style.display = 'none';
+                    document.body.style.overflow = 'auto';
+                }
+            });
+        }
+
+        // Send message
+        messageForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const messageText = messageInput.value.trim();
+            
+            // If no image and no text, do nothing
+            if (!selectedImage && !messageText) return;
+            
+            const message = {
+                senderId: currentUser.id,
+                text: messageText || 'Image',
+                timestamp: new Date().toISOString()
+            };
+            
+            // Add image if available
+            if (selectedImage) {
+                message.image = selectedImage;
+            }
+            
+            messages.push(message);
+            localStorage.setItem('chat-messages', JSON.stringify(messages));
+            
+            // Reset form
+            displayMessages();
+            messageInput.value = '';
+            imagePreview.style.display = 'none';
+            selectedImage = null;
+            fileInput.value = '';
+            messageInput.style.height = 'auto';
+        });
+
+        // Auto-resize textarea
+        messageInput.addEventListener('input', () => {
+            messageInput.style.height = 'auto';
+            messageInput.style.height = (messageInput.scrollHeight) + 'px';
+        });
+
+// Database එක open කිරීම/සාදාගැනීම
+function openDatabase() {
+    return new Promise((resolve, reject) => {
+        const request = indexedDB.open('ChatDatabase', 1);
+
+        request.onerror = (event) => {
+            console.error('Database error:', event.target.error);
+            reject(event.target.error);
+        };
+
+        request.onsuccess = (event) => {
+            const db = event.target.result;
+            resolve(db);
+        };
+
+        request.onupgradeneeded = (event) => {
+            const db = event.target.result;
+            
+            // Users store (table) සාදාගන්න
+            if (!db.objectStoreNames.contains('users')) {
+                const usersStore = db.createObjectStore('users', { keyPath: 'id' });
+                usersStore.createIndex('email', 'email', { unique: true });
+            }
+            
+            // Messages store (table) සාදාගන්න
+            if (!db.objectStoreNames.contains('messages')) {
+                db.createObjectStore('messages', { keyPath: 'id', autoIncrement: true });
+                // අවශ්‍ය indexes එකතු කරන්න
+            }
+        };
+    });
+}
+
+
+async function addUser(user) {
+    const db = await openDatabase();
+    const transaction = db.transaction('users', 'readwrite');
+    const store = transaction.objectStore('users');
+    
+    return new Promise((resolve, reject) => {
+        const request = store.add(user);
+        
+        request.onsuccess = () => resolve();
+        request.onerror = (event) => reject(event.target.error);
+    });
+}
+
+
+async function getUserById(id) {
+    const db = await openDatabase();
+    const transaction = db.transaction('users', 'readonly');
+    const store = transaction.objectStore('users');
+    
+    return new Promise((resolve, reject) => {
+        const request = store.get(id);
+        
+        request.onsuccess = () => resolve(request.result);
+        request.onerror = (event) => reject(event.target.error);
+    });
+}
+
+// Email අනුව user එකක් ලබාගන්න
+async function getUserByEmail(email) {
+    const db = await openDatabase();
+    const transaction = db.transaction('users', 'readonly');
+    const store = transaction.objectStore('users');
+    const index = store.index('email');
+    
+    return new Promise((resolve, reject) => {
+        const request = index.get(email);
+        
+        request.onsuccess = () => resolve(request.result);
+        request.onerror = (event) => reject(event.target.error);
+    });
+}
+
+async function updateUser(user) {
+    const db = await openDatabase();
+    const transaction = db.transaction('users', 'readwrite');
+    const store = transaction.objectStore('users');
+    
+    return new Promise((resolve, reject) => {
+        const request = store.put(user);
+        
+        request.onsuccess = () => resolve();
+        request.onerror = (event) => reject(event.target.error);
+    });
+}
+
+
+async function deleteUser(id) {
+    const db = await openDatabase();
+    const transaction = db.transaction('users', 'readwrite');
+    const store = transaction.objectStore('users');
+    
+    return new Promise((resolve, reject) => {
+        const request = store.delete(id);
+        
+        request.onsuccess = () => resolve();
+        request.onerror = (event) => reject(event.target.error);
+    });
+}
+
+
+// User login කිරීම
+async function loginUser(email, password) {
+    try {
+        const user = await getUserByEmail(email);
+        
+        if (user && user.password === password) {
+            currentUser = user;
+            // Current user ගබඩා කිරීම sessionStorage එකට (කුඩා දත්ත සඳහා)
+            sessionStorage.setItem('chat-current-user', JSON.stringify(currentUser));
+            return true;
+        }
+        return false;
+    } catch (error) {
+        console.error('Login error:', error);
+        return false;
+    }
+}
+
+// User register කිරීම
+async function registerUser(name, email, password, profilePic) {
+    try {
+        // User දැනටමත් ඇත්දැයි පරීක්ෂා කරන්න
+        const existingUser = await getUserByEmail(email);
+        if (existingUser) {
+            throw new Error('මෙම Email සමඟ දැනටමත් ගිණුමක් පවතී!');
+        }
+        
+        const newUser = {
+            id: Date.now().toString(),
+            name,
+            email,
+            password,
+            profilePic,
+            isAdmin: ADMIN_EMAILS.includes(email)
+        };
+        
+        await addUser(newUser);
+        return newUser;
+    } catch (error) {
+        console.error('Registration error:', error);
+        throw error;
+    }
+}
+
+
+// Message එකක් ගබඩා කිරීම
+async function saveMessage(message) {
+    const db = await openDatabase();
+    const transaction = db.transaction('messages', 'readwrite');
+    const store = transaction.objectStore('messages');
+    
+    // Timestamp එකතු කරන්න
+    message.timestamp = new Date().toISOString();
+    message.senderId = currentUser.id;
+    
+    return new Promise((resolve, reject) => {
+        const request = store.add(message);
+        
+        request.onsuccess = () => resolve();
+        request.onerror = (event) => reject(event.target.error);
+    });
+}
+
+// Messages ලබාගන්න (පැරණිම 100)
+async function getRecentMessages() {
+    const db = await openDatabase();
+    const transaction = db.transaction('messages', 'readonly');
+    const store = transaction.objectStore('messages');
+    
+    return new Promise((resolve, reject) => {
+        const request = store.openCursor(null, 'prev'); // පැරණිම අනුපිළිවෙලට
+        const messages = [];
+        let count = 0;
+        
+        request.onsuccess = (event) => {
+            const cursor = event.target.result;
+            if (cursor && count < 100) {
+                messages.push(cursor.value);
+                count++;
+                cursor.continue();
+            } else {
+                resolve(messages.reverse()); // නවතම පළමුව ලබාගන්න
+            }
+        };
+        
+        request.onerror = (event) => reject(event.target.error);
+    });
+}
+
+
+async function migrateFromLocalStorage() {
+    // Users migrate කිරීම
+    const oldUsers = JSON.parse(localStorage.getItem('chat-users')) || [];
+    for (const user of oldUsers) {
+        await addUser(user);
+    }
+    
+    // Messages migrate කිරීම
+    const oldMessages = JSON.parse(localStorage.getItem('chat-messages')) || [];
+    for (const message of oldMessages) {
+        await saveMessage(message);
+    }
+    
+    // පැරණි දත්ත මකාදැමීම
+    localStorage.removeItem('chat-users');
+    localStorage.removeItem('chat-messages');
+    localStorage.removeItem('chat-current-user');
+}
+
+        // Start the app
+        init();
+        
+        
+        
+    </script>
+</body>
+</html>
+
+
+
