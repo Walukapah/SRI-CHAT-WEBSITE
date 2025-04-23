@@ -1,859 +1,1027 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chat App</title>
-    <!-- Firebase SDK -->
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-storage.js"></script>
-    <!-- Font Awesome -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <style>
-        :root {
-            --primary-color: #2c3e50;
-            --secondary-color: #3498db;
-            --light-gray: #ecf0f1;
-            --dark-gray: #7f8c8d;
-            --white: #ffffff;
-            --shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-        }
-        
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        }
-        
-        body {
-            background-color: #f5f5f5;
-        }
-        
-        .chat-container {
-            display: flex;
-            flex-direction: column;
-            height: 100vh;
-            max-width: 800px;
-            margin: 0 auto;
-            box-shadow: var(--shadow);
-            background-color: var(--white);
-        }
-        
-        /* Chat Header */
-        .chat-header {
-            padding: 15px 20px;
-            background-color: var(--primary-color);
-            color: var(--white);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            position: relative;
-        }
-        
-        .chat-title {
-            font-weight: bold;
-            font-size: 18px;
-        }
-        
-        .user-dropdown {
-            position: relative;
-            display: inline-block;
-        }
-        
-        .user-toggle {
-            display: flex;
-            align-items: center;
-            cursor: pointer;
-        }
-        
-        .user-avatar {
-            width: 36px;
-            height: 36px;
-            border-radius: 50%;
-            object-fit: cover;
-            margin-left: 10px;
-            border: 2px solid var(--white);
-        }
-        
-        .dropdown-menu {
-            position: absolute;
-            right: 0;
-            top: 50px;
-            background-color: var(--white);
-            min-width: 200px;
-            box-shadow: var(--shadow);
-            border-radius: 5px;
-            z-index: 1000;
-            display: none;
-        }
-        
-        .dropdown-menu.show {
-            display: block;
-        }
-        
-        .user-info {
-            padding: 15px;
-            border-bottom: 1px solid var(--light-gray);
-        }
-        
-        .user-info-main {
-            display: flex;
-            align-items: center;
-            margin-bottom: 10px;
-        }
-        
-        .user-info-avatar {
-            width: 50px;
-            height: 50px;
-            border-radius: 50%;
-            object-fit: cover;
-            margin-right: 10px;
-        }
-        
-        .user-info-name {
-            font-weight: bold;
-        }
-        
-        .user-info-email {
-            font-size: 12px;
-            color: var(--dark-gray);
-        }
-        
-        .user-info-meta {
-            font-size: 12px;
-            color: var(--dark-gray);
-            margin-top: 5px;
-        }
-        
-        .dropdown-item {
-            padding: 10px 15px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-        }
-        
-        .dropdown-item:hover {
-            background-color: var(--light-gray);
-        }
-        
-        .dropdown-item i {
-            margin-right: 10px;
-            width: 20px;
-            text-align: center;
-        }
-        
-        /* Messages Container */
-        .messages-container {
-            flex-grow: 1;
-            padding: 20px;
-            overflow-y: auto;
-            background-color: var(--white);
-        }
-        
-        .message {
-            margin-bottom: 15px;
-            max-width: 70%;
-        }
-        
-        .received {
-            align-self: flex-start;
-        }
-        
-        .sent {
-            align-self: flex-end;
-        }
-        
-        .message-user {
-            font-size: 12px;
-            color: var(--dark-gray);
-            margin-bottom: 5px;
-        }
-        
-        .message-bubble {
-            padding: 10px 15px;
-            border-radius: 18px;
-            display: inline-block;
-            max-width: 100%;
-            word-wrap: break-word;
-        }
-        
-        .received .message-bubble {
-            background-color: var(--light-gray);
-            border-top-left-radius: 5px;
-        }
-        
-        .sent .message-bubble {
-            background-color: var(--secondary-color);
-            color: white;
-            border-top-right-radius: 5px;
-        }
-        
-        .message-time {
-            font-size: 11px;
-            color: var(--dark-gray);
-            margin-top: 5px;
-        }
-        
-        .message-image {
-            max-width: 250px;
-            max-height: 250px;
-            border-radius: 10px;
-            margin-top: 5px;
-        }
-        
-        /* Chat Input */
-        .chat-input {
-            padding: 15px 20px;
-            border-top: 1px solid var(--light-gray);
-            display: flex;
-            align-items: center;
-            background-color: var(--white);
-        }
-        
-        .message-input {
-            flex-grow: 1;
-            padding: 12px 15px;
-            border: 1px solid var(--light-gray);
-            border-radius: 25px;
-            outline: none;
-            font-size: 14px;
-        }
-        
-        .send-button {
-            background-color: var(--secondary-color);
-            color: white;
-            border: none;
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            margin-left: 10px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        
-        .attachment-button {
-            background-color: transparent;
-            border: none;
-            color: var(--secondary-color);
-            font-size: 20px;
-            margin-right: 10px;
-            cursor: pointer;
-        }
-        
-        /* Auth Container */
-        #auth-container {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            background-color: var(--primary-color);
-        }
-        
-        .auth-box {
-            background-color: var(--white);
-            padding: 30px;
-            border-radius: 8px;
-            width: 100%;
-            max-width: 400px;
-            box-shadow: var(--shadow);
-        }
-        
-        .auth-title {
-            text-align: center;
-            margin-bottom: 25px;
-            color: var(--primary-color);
-        }
-        
-        .auth-tabs {
-            display: flex;
-            margin-bottom: 20px;
-            border-bottom: 1px solid var(--light-gray);
-        }
-        
-        .auth-tab {
-            flex: 1;
-            text-align: center;
-            padding: 10px;
-            cursor: pointer;
-            border-bottom: 2px solid transparent;
-        }
-        
-        .auth-tab.active {
-            border-bottom: 2px solid var(--secondary-color);
-            font-weight: bold;
-        }
-        
-        .auth-form {
-            display: none;
-        }
-        
-        .auth-form.active {
-            display: block;
-        }
-        
-        .auth-input {
-            width: 100%;
-            padding: 12px 15px;
-            margin-bottom: 15px;
-            border: 1px solid var(--light-gray);
-            border-radius: 5px;
-            font-size: 14px;
-        }
-        
-        .auth-button {
-            width: 100%;
-            padding: 12px;
-            background-color: var(--secondary-color);
-            color: var(--white);
-            border: none;
-            border-radius: 5px;
-            font-size: 16px;
-            cursor: pointer;
-            margin-bottom: 15px;
-        }
-        
-        .auth-error {
-            color: #e74c3c;
-            font-size: 14px;
-            margin-bottom: 15px;
-            text-align: center;
-        }
-        
-        .avatar-upload {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            margin-bottom: 15px;
-        }
-        
-        .avatar-preview {
-            width: 80px;
-            height: 80px;
-            border-radius: 50%;
-            object-fit: cover;
-            margin-bottom: 10px;
-            border: 2px solid var(--secondary-color);
-        }
-        
-        .avatar-label {
-            background-color: var(--secondary-color);
-            color: white;
-            padding: 8px 15px;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 14px;
-            transition: background-color 0.3s;
-        }
-        
-        .avatar-label:hover {
-            background-color: #2980b9;
-        }
-        
-        .avatar-file {
-            display: none;
-        }
-        
-        /* Modal */
-        .modal {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0, 0, 0, 0.5);
-            z-index: 1000;
-            justify-content: center;
-            align-items: center;
-        }
-        
-        .modal-content {
-            background-color: var(--white);
-            padding: 20px;
-            border-radius: 8px;
-            width: 90%;
-            max-width: 400px;
-        }
-        
-        .modal-title {
-            font-size: 18px;
-            margin-bottom: 15px;
-            color: var(--primary-color);
-        }
-        
-        .modal-buttons {
-            display: flex;
-            justify-content: flex-end;
-            margin-top: 20px;
-        }
-        
-        .modal-button {
-            padding: 8px 15px;
-            border-radius: 4px;
-            cursor: pointer;
-            margin-left: 10px;
-        }
-        
-        .modal-cancel {
-            background-color: var(--light-gray);
-            border: none;
-        }
-        
-        .modal-confirm {
-            background-color: var(--secondary-color);
-            color: white;
-            border: none;
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Realtime Group Chat with Profile Editing</title>
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-storage.js"></script>
+  <style>
+    :root {
+      --primary-color: #075E54;
+      --secondary-color: #128C7E;
+      --message-sent: #DCF8C6;
+      --message-received: #FFFFFF;
+      --background-color: #ECE5DD;
+      --input-background: #F0F0F0;
+    }
+    
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: var(--background-color);
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+    
+    .auth-container {
+      max-width: 400px;
+      width: 90%;
+      margin: 2rem auto;
+      padding: 2rem;
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+    
+    .auth-container h2 {
+      color: var(--primary-color);
+      text-align: center;
+      margin-bottom: 1.5rem;
+    }
+    
+    .auth-form {
+      display: flex;
+      flex-direction: column;
+    }
+    
+    .auth-toggle {
+      text-align: center;
+      margin-top: 1rem;
+      color: #666;
+    }
+    
+    .auth-toggle a {
+      color: var(--secondary-color);
+      text-decoration: none;
+      font-weight: 500;
+    }
+    
+    .auth-toggle a:hover {
+      text-decoration: underline;
+    }
+    
+    input {
+      padding: 0.8rem;
+      margin-bottom: 1rem;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      font-size: 1rem;
+    }
+    
+    button {
+      padding: 0.8rem;
+      border: none;
+      border-radius: 4px;
+      font-size: 1rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background-color 0.2s;
+    }
+    
+    .btn-primary {
+      background-color: var(--secondary-color);
+      color: white;
+    }
+    
+    .btn-primary:hover {
+      background-color: var(--primary-color);
+    }
+    
+    .chat-container {
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      max-width: 800px;
+      width: 100%;
+      margin: 0 auto;
+      background-color: white;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    }
+    
+    .chat-header {
+      background-color: var(--primary-color);
+      color: white;
+      padding: 1rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: relative;
+    }
+    
+    .chat-header h2 {
+      font-size: 1.2rem;
+    }
+    
+    .profile-dropdown {
+      position: relative;
+      display: inline-block;
+    }
+    
+    .profile-btn {
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 0;
+    }
+    
+    .profile-img {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      object-fit: cover;
+    }
+    
+    .dropdown-content {
+      display: none;
+      position: absolute;
+      right: 0;
+      background-color: #f9f9f9;
+      min-width: 250px;
+      box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+      z-index: 1;
+      border-radius: 8px;
+      overflow: hidden;
+      padding: 15px;
+    }
+    
+    .profile-form {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    
+    .profile-form input {
+      padding: 8px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      width: 100%;
+    }
+    
+    .profile-picture-edit {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+    
+    .profile-picture-edit img {
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      object-fit: cover;
+      margin-bottom: 8px;
+      cursor: pointer;
+    }
+    
+    .profile-picture-edit label {
+      background-color: var(--secondary-color);
+      color: white;
+      padding: 8px 12px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 0.9rem;
+      text-align: center;
+      transition: background-color 0.2s;
+    }
+    
+    .profile-picture-edit label:hover {
+      background-color: var(--primary-color);
+    }
+    
+    .profile-picture-edit input {
+      display: none;
+    }
+    
+    .form-actions {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 10px;
+    }
+    
+    .btn-small {
+      padding: 8px 12px;
+      font-size: 0.9rem;
+    }
+    
+    .btn-secondary {
+      background-color: #f0f0f0;
+      color: #333;
+    }
+    
+    .btn-secondary:hover {
+      background-color: #e0e0e0;
+    }
+    
+    .chat-messages {
+      flex: 1;
+      padding: 1rem;
+      overflow-y: auto;
+      background-image: url('https://web.whatsapp.com/img/bg-chat-tile-light_a4be512e7195b6b733d9110b408f075d.png');
+      background-repeat: repeat;
+    }
+    
+    .message-container {
+      display: flex;
+      margin-bottom: 1rem;
+    }
+    
+    .message-avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      margin-right: 0.8rem;
+      object-fit: cover;
+      align-self: flex-end;
+    }
+    
+    .message-content {
+      max-width: calc(70% - 40px);
+      display: flex;
+      flex-direction: column;
+    }
+    
+    .message {
+      padding: 0.8rem;
+      border-radius: 8px;
+      word-wrap: break-word;
+      position: relative;
+    }
+    
+    .message-sent {
+      background-color: var(--message-sent);
+      margin-left: auto;
+      margin-right: 0.5rem;
+    }
+    
+    .message-received {
+      background-color: var(--message-received);
+      margin-right: auto;
+      margin-left: 0.5rem;
+      box-shadow: 0 1px 1px rgba(0, 0, 0, 0.1);
+    }
+    
+    .message-sender {
+      font-weight: 600;
+      font-size: 0.9rem;
+      margin-bottom: 0.3rem;
+      color: var(--primary-color);
+    }
+    
+    .message-time {
+      font-size: 0.7rem;
+      color: #666;
+      text-align: right;
+      margin-top: 0.3rem;
+    }
+    
+    .message-image {
+      max-width: 200px;
+      max-height: 200px;
+      border-radius: 4px;
+      margin-top: 0.5rem;
+    }
+    
+    .message-sticker {
+      width: 100px;
+      height: 100px;
+    }
+    
+    .input-area {
+      display: flex;
+      padding: 0.8rem;
+      background-color: var(--input-background);
+      align-items: center;
+    }
+    
+    .message-input {
+      flex: 1;
+      padding: 0.8rem;
+      border: none;
+      border-radius: 20px;
+      margin-right: 0.5rem;
+      font-size: 1rem;
+    }
+    
+    .action-btn {
+      background: none;
+      border: none;
+      font-size: 1.4rem;
+      margin: 0 0.3rem;
+      cursor: pointer;
+      color: var(--primary-color);
+    }
+    
+    .sticker-selector {
+      display: none;
+      padding: 1rem;
+      background-color: white;
+      border-top: 1px solid #ddd;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    
+    .sticker {
+      width: 60px;
+      height: 60px;
+      margin: 0.5rem;
+      cursor: pointer;
+      transition: transform 0.2s;
+    }
+    
+    .sticker:hover {
+      transform: scale(1.1);
+    }
+    
+    .hidden {
+      display: none;
+    }
+    
+    .profile-picture-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin-bottom: 1rem;
+    }
+    
+    .profile-picture {
+      width: 100px;
+      height: 100px;
+      border-radius: 50%;
+      object-fit: cover;
+      margin-bottom: 0.5rem;
+      cursor: pointer;
+    }
+    
+    .profile-picture-upload {
+      display: none;
+    }
+    
+    .profile-picture-btn {
+      background-color: var(--secondary-color);
+      color: white;
+      padding: 0.5rem 1rem;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 0.9rem;
+    }
+    
+    @media (max-width: 600px) {
+      .auth-container {
+        margin: 1rem auto;
+        padding: 1.5rem;
+      }
+      
+      .message-content {
+        max-width: calc(80% - 40px);
+      }
+      
+      .message-image {
+        max-width: 150px;
+      }
+      
+      .profile-picture {
+        width: 80px;
+        height: 80px;
+      }
+      
+      .dropdown-content {
+        min-width: 220px;
+      }
+    }
+  </style>
 </head>
 <body>
-    <!-- Auth Container -->
-    <div id="auth-container">
-        <div class="auth-box">
-            <div class="auth-title">
-                <h2>Chat App</h2>
-                <p>Connect with your friends</p>
-            </div>
-            
-            <div class="auth-tabs">
-                <div class="auth-tab active" data-tab="login">Login</div>
-                <div class="auth-tab" data-tab="signup">Sign Up</div>
-            </div>
-            
-            <div id="auth-error" class="auth-error"></div>
-            
-            <!-- Login Form -->
-            <div id="login-form" class="auth-form active">
-                <input type="email" id="login-email" class="auth-input" placeholder="Email">
-                <input type="password" id="login-password" class="auth-input" placeholder="Password">
-                <button id="login-btn" class="auth-button">Login</button>
-            </div>
-            
-            <!-- Signup Form -->
-            <div id="signup-form" class="auth-form">
-                <div class="avatar-upload">
-                    <img id="signup-avatar-preview" class="avatar-preview" src="https://via.placeholder.com/80" alt="Profile">
-                    <label for="signup-avatar" class="avatar-label">Choose Profile Picture</label>
-                    <input type="file" id="signup-avatar" class="avatar-file" accept="image/*">
-                </div>
-                <input type="text" id="signup-username" class="auth-input" placeholder="Username">
-                <input type="email" id="signup-email" class="auth-input" placeholder="Email">
-                <input type="password" id="signup-password" class="auth-input" placeholder="Password">
-                <button id="signup-btn" class="auth-button">Sign Up</button>
-            </div>
-        </div>
+  <!-- Authentication Section -->
+  <div id="auth-container" class="auth-container">
+    <h2>Realtime Chat</h2>
+    <div id="login-section">
+      <form class="auth-form" onsubmit="event.preventDefault(); handleLogin();">
+        <input type="email" id="login-email" placeholder="Email" required>
+        <input type="password" id="login-password" placeholder="Password" required>
+        <button type="submit" class="btn-primary" id="login-btn">Login</button>
+      </form>
+      <div class="auth-toggle">
+        Don't have an account? <a href="#" id="show-register">Register</a>
+      </div>
     </div>
-
-    <!-- Chat Container -->
-    <div id="chat-app" style="display: none;">
-        <div class="chat-container">
-            <div class="chat-header">
-                <div class="chat-title">Chat</div>
-                <div class="user-dropdown">
-                    <div class="user-toggle" id="user-toggle">
-                        <img id="header-avatar" class="user-avatar" src="https://via.placeholder.com/36" alt="User">
-                    </div>
-                    <div class="dropdown-menu" id="dropdown-menu">
-                        <div class="user-info">
-                            <div class="user-info-main">
-                                <img id="dropdown-avatar" class="user-info-avatar" src="https://via.placeholder.com/50" alt="User">
-                                <div>
-                                    <div class="user-info-name" id="dropdown-name">Username</div>
-                                    <div class="user-info-email" id="dropdown-email">user@example.com</div>
-                                </div>
-                            </div>
-                            <div class="user-info-meta">
-                                <div>Member since: <span id="member-since">Loading...</span></div>
-                                <div>Last login: <span id="last-login">Loading...</span></div>
-                            </div>
-                        </div>
-                        <div class="dropdown-item" id="logout-btn">
-                            <i class="fas fa-sign-out-alt"></i>
-                            <span>Logout</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="messages-container" id="messages-container">
-                <!-- Messages will appear here -->
-            </div>
-            
-            <div class="chat-input">
-                <button class="attachment-button" id="attachment-btn">
-                    <i class="fas fa-image"></i>
-                </button>
-                <input type="file" id="image-upload" style="display: none;">
-                <input type="text" id="message-input" class="message-input" placeholder="Type your message...">
-                <button class="send-button" id="send-btn">
-                    <i class="fas fa-paper-plane"></i>
-                </button>
-            </div>
-        </div>
+    <div id="register-section" class="hidden">
+      <div class="profile-picture-container">
+        <img src="https://cdn-icons-png.flaticon.com/512/3135/3135715.png" id="register-profile-preview" class="profile-picture">
+        <input type="file" id="register-profile-picture" class="profile-picture-upload" accept="image/*">
+        <label for="register-profile-picture" class="profile-picture-btn">Choose Profile Picture</label>
+      </div>
+      <form class="auth-form" onsubmit="event.preventDefault(); handleRegister();">
+        <input type="text" id="register-username" placeholder="Username" required>
+        <input type="email" id="register-email" placeholder="Email" required>
+        <input type="password" id="register-password" placeholder="Password" required>
+        <button type="submit" class="btn-primary" id="register-btn">Register</button>
+      </form>
+      <div class="auth-toggle">
+        Already have an account? <a href="#" id="show-login">Login</a>
+      </div>
     </div>
+  </div>
 
-    <!-- Logout Confirmation Modal -->
-    <div class="modal" id="logout-modal">
-        <div class="modal-content">
-            <div class="modal-title">Confirm Logout</div>
-            <p>Are you sure you want to logout?</p>
-            <div class="modal-buttons">
-                <button class="modal-button modal-cancel" id="cancel-logout">Cancel</button>
-                <button class="modal-button modal-confirm" id="confirm-logout">Logout</button>
+  <!-- Chat Section -->
+  <div id="chat-container" class="chat-container">
+    <div class="chat-header">
+      <h2>Group Chat</h2>
+      <div class="profile-dropdown">
+        <button class="profile-btn" id="profile-btn">
+          <img src="" id="user-profile-picture" class="profile-img" alt="Profile">
+        </button>
+        <div class="dropdown-content" id="dropdown-content">
+          <div class="profile-picture-edit">
+            <img src="" id="editable-profile-pic" class="profile-img" style="width: 80px; height: 80px;">
+            <label for="profile-picture-update">Change Photo</label>
+            <input type="file" id="profile-picture-update" accept="image/*">
+          </div>
+          <div class="profile-form">
+            <input type="text" id="edit-username" placeholder="Your Name">
+            <div class="form-actions">
+              <button class="btn-primary btn-small" id="save-profile-btn">Save Changes</button>
+              <button class="btn-secondary btn-small" id="logout-btn">Logout</button>
             </div>
+          </div>
         </div>
+      </div>
     </div>
+    <div class="chat-messages" id="chat-messages"></div>
+    <div class="input-area">
+      <input type="text" class="message-input" id="message-input" placeholder="Type a message..." autocomplete="off">
+      <button class="action-btn" id="sticker-btn">😊</button>
+      <button class="action-btn" id="image-btn">📷</button>
+      <button class="btn-primary" id="send-btn">Send</button>
+      <input type="file" id="image-upload" accept="image/*" style="display: none;">
+    </div>
+    <div class="sticker-selector" id="sticker-selector">
+      <img src="https://cdn-icons-png.flaticon.com/128/184/184657.png" class="sticker" data-sticker="😀">
+      <img src="https://cdn-icons-png.flaticon.com/128/742/742751.png" class="sticker" data-sticker="😂">
+      <img src="https://cdn-icons-png.flaticon.com/128/742/742764.png" class="sticker" data-sticker="😍">
+      <img src="https://cdn-icons-png.flaticon.com/128/184/184514.png" class="sticker" data-sticker="👍">
+    </div>
+  </div>
 
-    <script>
-        // Firebase configuration
-        const firebaseConfig = {
-  apiKey: "AIzaSyC_UzpuqOqBLYPtM39uYwEoIpp2qG_BRPs",
-  authDomain: "sri-chat-f719e.firebaseapp.com",
-  databaseURL: "https://sri-chat-f719e-default-rtdb.firebaseio.com",
-  projectId: "sri-chat-f719e",
-  storageBucket: "sri-chat-f719e.firebasestorage.app",
-  messagingSenderId: "584035475007",
-  appId: "1:584035475007:web:9384446cc035f2a623a28a"
-};
+  <script>
+    // Firebase configuration
+    const firebaseConfig = {
+      apiKey: "AIzaSyDAVfH_bpBh0w4EK4HlVEQNqS0-JEyPgEo",
+      authDomain: "sri-chat-e37a4.firebaseapp.com",
+      databaseURL: "https://sri-chat-e37a4-default-rtdb.asia-southeast1.firebasedatabase.app",
+      projectId: "sri-chat-e37a4",
+      storageBucket: "sri-chat-e37a4.appspot.com",
+      messagingSenderId: "1078026226530",
+      appId: "1:1078026226530:web:8c39e65beff536bd87ba3b",
+      measurementId: "G-99R5NJK224"
+    };
 
-        // Initialize Firebase
-        firebase.initializeApp(firebaseConfig);
-        const auth = firebase.auth();
-        const db = firebase.firestore();
-        const storage = firebase.storage();
+    // Initialize Firebase
+    const app = firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const database = firebase.database();
+    const storage = firebase.storage();
 
-        // DOM elements
-        const authContainer = document.getElementById('auth-container');
-        const chatApp = document.getElementById('chat-app');
-        const loginForm = document.getElementById('login-form');
-        const signupForm = document.getElementById('signup-form');
-        const loginEmail = document.getElementById('login-email');
-        const loginPassword = document.getElementById('login-password');
-        const loginBtn = document.getElementById('login-btn');
-        const signupUsername = document.getElementById('signup-username');
-        const signupEmail = document.getElementById('signup-email');
-        const signupPassword = document.getElementById('signup-password');
-        const signupBtn = document.getElementById('signup-btn');
-        const authError = document.getElementById('auth-error');
-        const messagesContainer = document.getElementById('messages-container');
-        const messageInput = document.getElementById('message-input');
-        const imageUpload = document.getElementById('image-upload');
-        const attachmentBtn = document.getElementById('attachment-btn');
-        const sendBtn = document.getElementById('send-btn');
-        const userToggle = document.getElementById('user-toggle');
-        const dropdownMenu = document.getElementById('dropdown-menu');
-        const headerAvatar = document.getElementById('header-avatar');
-        const dropdownAvatar = document.getElementById('dropdown-avatar');
-        const dropdownName = document.getElementById('dropdown-name');
-        const dropdownEmail = document.getElementById('dropdown-email');
-        const memberSince = document.getElementById('member-since');
-        const lastLogin = document.getElementById('last-login');
-        const logoutBtn = document.getElementById('logout-btn');
-        const logoutModal = document.getElementById('logout-modal');
-        const cancelLogout = document.getElementById('cancel-logout');
-        const confirmLogout = document.getElementById('confirm-logout');
-        const signupAvatar = document.getElementById('signup-avatar');
-        const signupAvatarPreview = document.getElementById('signup-avatar-preview');
-        const authTabs = document.querySelectorAll('.auth-tab');
+    // Google Apps Script Web App URL
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwf33pKwVfH1rfnCV7iHUYVC86uh_emJiw-f58vNrziRSNLBM9pOxC3hd57ZUgtZA-5/exec";
 
-        // Current user data
-        let currentUserData = null;
+    // DOM Elements
+    const loginSection = document.getElementById('login-section');
+    const registerSection = document.getElementById('register-section');
+    const showRegister = document.getElementById('show-register');
+    const showLogin = document.getElementById('show-login');
+    const loginBtn = document.getElementById('login-btn');
+    const registerBtn = document.getElementById('register-btn');
+    const authContainer = document.getElementById('auth-container');
+    const chatContainer = document.getElementById('chat-container');
+    const chatMessages = document.getElementById('chat-messages');
+    const messageInput = document.getElementById('message-input');
+    const sendBtn = document.getElementById('send-btn');
+    const imageBtn = document.getElementById('image-btn');
+    const stickerBtn = document.getElementById('sticker-btn');
+    const imageUpload = document.getElementById('image-upload');
+    const stickerSelector = document.getElementById('sticker-selector');
+    const registerProfilePicture = document.getElementById('register-profile-picture');
+    const registerProfilePreview = document.getElementById('register-profile-preview');
+    const userProfilePicture = document.getElementById('user-profile-picture');
+    const logoutBtn = document.getElementById('logout-btn');
+    const profileBtn = document.getElementById('profile-btn');
+    const dropdownContent = document.getElementById('dropdown-content');
+    const editableProfilePic = document.getElementById('editable-profile-pic');
+    const profilePictureUpdate = document.getElementById('profile-picture-update');
+    const editUsername = document.getElementById('edit-username');
+    const saveProfileBtn = document.getElementById('save-profile-btn');
 
-        // Tab switching
-        authTabs.forEach(tab => {
-            tab.addEventListener('click', () => {
-                authTabs.forEach(t => t.classList.remove('active'));
-                tab.classList.add('active');
-                
-                loginForm.classList.remove('active');
-                signupForm.classList.remove('active');
-                
-                if (tab.dataset.tab === 'login') {
-                    loginForm.classList.add('active');
-                } else {
-                    signupForm.classList.add('active');
-                }
-                
-                authError.textContent = '';
-            });
+    // Current user data
+    let currentUser = null;
+    let currentUsername = "";
+    let currentUserProfilePic = "https://cdn-icons-png.flaticon.com/512/3135/3135715.png";
+    let messagesRef;
+    let initialMessagesLoaded = false;
+    let registerProfilePicFile = null;
+    let newProfilePicFile = null;
+
+    // Initialize UI
+    authContainer.style.display = 'block';
+    chatContainer.style.display = 'none';
+
+    // Event Listeners
+    showRegister.addEventListener('click', () => {
+      loginSection.classList.add('hidden');
+      registerSection.classList.remove('hidden');
+    });
+
+    showLogin.addEventListener('click', () => {
+      registerSection.classList.add('hidden');
+      loginSection.classList.remove('hidden');
+    });
+
+    loginBtn.addEventListener('click', handleLogin);
+    registerBtn.addEventListener('click', handleRegister);
+    sendBtn.addEventListener('click', sendTextMessage);
+    messageInput.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') {
+        sendTextMessage();
+      }
+    });
+    logoutBtn.addEventListener('click', handleLogout);
+    imageBtn.addEventListener('click', () => imageUpload.click());
+    stickerBtn.addEventListener('click', toggleStickerSelector);
+    imageUpload.addEventListener('change', handleImageUpload);
+    
+    // Profile picture upload during registration
+    registerProfilePicture.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (file) {
+        registerProfilePicFile = file;
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          registerProfilePreview.src = event.target.result;
+        };
+        reader.readAsDataURL(file);
+      }
+    });
+    
+    // Profile picture update in dropdown
+    profilePictureUpdate.addEventListener('change', handleProfilePictureUpdate);
+    saveProfileBtn.addEventListener('click', updateUserProfile);
+    
+    // Toggle dropdown menu
+    profileBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      dropdownContent.style.display = dropdownContent.style.display === 'block' ? 'none' : 'block';
+    });
+    
+    // Close dropdown when clicking outside
+    document.addEventListener('click', () => {
+      dropdownContent.style.display = 'none';
+    });
+    
+    // Sticker click event listeners
+    document.querySelectorAll('.sticker').forEach(sticker => {
+      sticker.addEventListener('click', () => {
+        const stickerCode = sticker.getAttribute('data-sticker');
+        sendMessage({
+          type: 'sticker',
+          content: sticker.src,
+          stickerCode: stickerCode
         });
+        toggleStickerSelector();
+      });
+    });
 
-        // Preview avatar before upload
-        signupAvatar.addEventListener('change', function(e) {
-            const file = e.target.files[0];
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = function(event) {
-                    signupAvatarPreview.src = event.target.result;
-                };
-                reader.readAsDataURL(file);
-            }
+    // Check auth state
+    auth.onAuthStateChanged(user => {
+      if (user) {
+        // User is signed in
+        currentUser = user;
+        authContainer.style.display = 'none';
+        chatContainer.style.display = 'flex';
+        loadUserData();
+        setupRealtimeChat();
+      } else {
+        // User is signed out
+        currentUser = null;
+        authContainer.style.display = 'block';
+        chatContainer.style.display = 'none';
+        
+        // Clean up listeners when user logs out
+        if (messagesRef) {
+          messagesRef.off();
+          initialMessagesLoaded = false;
+        }
+      }
+    });
+
+    // Setup realtime chat listener
+    function setupRealtimeChat() {
+      messagesRef = database.ref('messages');
+      
+      // Clear existing messages
+      chatMessages.innerHTML = '';
+      
+      // Load initial messages only once
+      if (!initialMessagesLoaded) {
+        messagesRef.once('value').then((snapshot) => {
+          const messages = [];
+          snapshot.forEach((childSnapshot) => {
+            messages.push(childSnapshot.val());
+          });
+          
+          // Sort messages by timestamp (oldest first)
+          messages.sort((a, b) => a.timestamp - b.timestamp);
+          
+          // Display all messages
+          messages.forEach(message => {
+            addMessageToUI(message);
+          });
+          
+          scrollToBottom();
+          initialMessagesLoaded = true;
         });
+      }
+      
+      // Listen for new messages
+      messagesRef.on('child_added', (snapshot) => {
+        const message = snapshot.val();
+        addMessageToUI(message);
+        scrollToBottom();
+      });
+    }
 
-        // Toggle dropdown menu
-        userToggle.addEventListener('click', function(e) {
-            e.stopPropagation();
-            dropdownMenu.classList.toggle('show');
+    // Handle Login
+    async function handleLogin() {
+      const email = document.getElementById('login-email').value;
+      const password = document.getElementById('login-password').value;
+      
+      try {
+        // Authenticate with Firebase
+        await auth.signInWithEmailAndPassword(email, password);
+      } catch (error) {
+        alert(error.message);
+      }
+    }
+
+    // Handle Register
+    async function handleRegister() {
+      const email = document.getElementById('register-email').value;
+      const password = document.getElementById('register-password').value;
+      const username = document.getElementById('register-username').value;
+      
+      try {
+        // Create user in Firebase
+        const userCredential = await auth.createUserWithEmailAndPassword(email, password);
+        
+        // Upload profile picture if selected
+        let profilePicUrl = "https://cdn-icons-png.flaticon.com/512/3135/3135715.png";
+        if (registerProfilePicFile) {
+          const storageRef = storage.ref(`profile_pictures/${userCredential.user.uid}`);
+          const uploadTask = await storageRef.put(registerProfilePicFile);
+          profilePicUrl = await uploadTask.ref.getDownloadURL();
+        }
+        
+        // Set the username and profile picture URL
+        await userCredential.user.updateProfile({
+          displayName: username,
+          photoURL: profilePicUrl
         });
-
-        // Close dropdown when clicking outside
-        document.addEventListener('click', function() {
-            dropdownMenu.classList.remove('show');
+        
+        // Save user data to Google Sheets
+        const response = await fetch(SCRIPT_URL, {
+          method: 'POST',
+          body: JSON.stringify({
+            action: 'register',
+            email: email,
+            password: password,
+            username: username,
+            profile_pic: profilePicUrl
+          })
         });
+        
+        const data = await response.json();
+        if (data.status !== 'success') {
+          await userCredential.user.delete();
+          alert(data.message);
+        } else {
+          alert('Registration successful! Please login.');
+          registerSection.classList.add('hidden');
+          loginSection.classList.remove('hidden');
+        }
+      } catch (error) {
+        alert(error.message);
+      }
+    }
 
-        // Prevent dropdown from closing when clicking inside
-        dropdownMenu.addEventListener('click', function(e) {
-            e.stopPropagation();
-        });
+    // Handle Logout
+    function handleLogout() {
+      auth.signOut();
+    }
 
-        // Auth state listener
-        auth.onAuthStateChanged(user => {
-            if (user) {
-                // User is signed in
-                authContainer.style.display = 'none';
-                chatApp.style.display = 'block';
-                loadUserData(user.uid);
-                loadMessages();
-            } else {
-                // User is signed out
-                authContainer.style.display = 'flex';
-                chatApp.style.display = 'none';
-            }
-        });
+    // Handle Profile Picture Update
+    function handleProfilePictureUpdate(e) {
+      const file = e.target.files[0];
+      if (file) {
+        newProfilePicFile = file;
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          editableProfilePic.src = event.target.result;
+        };
+        reader.readAsDataURL(file);
+      }
+    }
 
-        // Load user data
-        function loadUserData(userId) {
-            db.collection('users').doc(userId).get()
-                .then(doc => {
-                    if (doc.exists) {
-                        currentUserData = doc.data();
-                        
-                        // Update header avatar
-                        if (currentUserData.photoURL) {
-                            headerAvatar.src = currentUserData.photoURL;
-                            dropdownAvatar.src = currentUserData.photoURL;
-                        }
-                        
-                        // Update dropdown info
-                        dropdownName.textContent = currentUserData.username || currentUserData.email.split('@')[0];
-                        dropdownEmail.textContent = currentUserData.email;
-                        
-                        // Format dates
-                        if (currentUserData.createdAt) {
-                            memberSince.textContent = currentUserData.createdAt.toDate().toLocaleDateString();
-                        }
-                        
-                        if (currentUserData.lastLogin) {
-                            lastLogin.textContent = currentUserData.lastLogin.toDate().toLocaleString();
-                        } else {
-                            lastLogin.textContent = "Just now";
-                        }
-                    }
-                });
+    // Update User Profile (name and picture)
+    async function updateUserProfile() {
+      if (!currentUser) return;
+      
+      const newUsername = editUsername.value.trim();
+      if (!newUsername) {
+        alert('Please enter a valid username');
+        return;
+      }
+
+      try {
+        // Show loading state
+        saveProfileBtn.disabled = true;
+        saveProfileBtn.textContent = 'Saving...';
+        
+        // Update profile picture if changed
+        let profilePicUrl = currentUserProfilePic;
+        if (newProfilePicFile) {
+          const storageRef = storage.ref(`profile_pictures/${currentUser.uid}`);
+          const uploadTask = await storageRef.put(newProfilePicFile);
+          profilePicUrl = await uploadTask.ref.getDownloadURL();
         }
 
-        // Login function
-        loginBtn.addEventListener('click', () => {
-            const email = loginEmail.value;
-            const password = loginPassword.value;
-            
-            auth.signInWithEmailAndPassword(email, password)
-                .then(cred => {
-                    // Update last login time
-                    return db.collection('users').doc(cred.user.uid).update({
-                        lastLogin: firebase.firestore.FieldValue.serverTimestamp()
-                    });
-                })
-                .catch(error => {
-                    authError.textContent = error.message;
-                });
+        // Update Firebase profile
+        await currentUser.updateProfile({
+          displayName: newUsername,
+          photoURL: profilePicUrl
         });
 
-        // Signup function with username and avatar
-        signupBtn.addEventListener('click', () => {
-            const username = signupUsername.value.trim();
-            const email = signupEmail.value;
-            const password = signupPassword.value;
-            const file = signupAvatar.files[0];
-            
-            if (!username) {
-                authError.textContent = "Please enter a username";
-                return;
-            }
-            
-            if (username.length < 3) {
-                authError.textContent = "Username must be at least 3 characters";
-                return;
-            }
-            
-            if (!file) {
-                authError.textContent = "Please select a profile picture";
-                return;
-            }
-            
-            // First create the user
-            auth.createUserWithEmailAndPassword(email, password)
-                .then(cred => {
-                    // Upload the avatar
-                    const storageRef = storage.ref(`profile_pictures/${cred.user.uid}`);
-                    return storageRef.put(file)
-                        .then(snapshot => snapshot.ref.getDownloadURL())
-                        .then(downloadURL => {
-                            // Create user profile with username and photoURL
-                            return db.collection('users').doc(cred.user.uid).set({
-                                username: username,
-                                email: email,
-                                photoURL: downloadURL,
-                                createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-                                lastLogin: firebase.firestore.FieldValue.serverTimestamp()
-                            });
-                        });
-                })
-                .then(() => {
-                    // Switch to login tab after successful signup
-                    document.querySelector('.auth-tab[data-tab="login"]').click();
-                    loginEmail.value = email;
-                    authError.textContent = "Account created successfully! Please login.";
-                    authError.style.color = "green";
-                })
-                .catch(error => {
-                    authError.textContent = error.message;
-                    authError.style.color = "#e74c3c";
-                });
+        // Update Google Sheets
+        const response = await fetch(SCRIPT_URL, {
+          method: 'POST',
+          body: JSON.stringify({
+            action: 'update_profile',
+            email: currentUser.email,
+            username: newUsername,
+            profile_pic: profilePicUrl
+          })
         });
 
-        // Load messages
-        function loadMessages() {
-            db.collection('messages')
-                .orderBy('timestamp')
-                .onSnapshot(snapshot => {
-                    messagesContainer.innerHTML = '';
-                    
-                    snapshot.forEach(doc => {
-                        const message = doc.data();
-                        displayMessage(message);
-                    });
-                    
-                    // Scroll to bottom
-                    messagesContainer.scrollTop = messagesContainer.scrollHeight;
-                });
+        const data = await response.json();
+        if (data.status === 'success') {
+          // Update local variables
+          currentUsername = newUsername;
+          currentUserProfilePic = profilePicUrl;
+          
+          // Update UI elements
+          userProfilePicture.src = profilePicUrl;
+          editableProfilePic.src = profilePicUrl;
+          
+          // Update all messages with new username and profile pic
+          updateMessagesWithNewProfile(newUsername, profilePicUrl);
+          
+          // Close dropdown
+          dropdownContent.style.display = 'none';
+          
+          alert('Profile updated successfully!');
+        } else {
+          throw new Error(data.message || 'Failed to update profile');
         }
+      } catch (error) {
+        console.error('Error updating profile:', error);
+        alert('Error updating profile: ' + error.message);
+      } finally {
+        // Reset button state
+        saveProfileBtn.disabled = false;
+        saveProfileBtn.textContent = 'Save Changes';
+      }
+    }
 
-        // Display a single message
-        function displayMessage(message) {
-            const user = auth.currentUser;
-            const isCurrentUser = user && message.userId === user.uid;
-            
-            db.collection('users').doc(message.userId).get()
-                .then(userDoc => {
-                    const userData = userDoc.data();
-                    const messageTime = message.timestamp ? 
-                        new Date(message.timestamp.toDate()).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : 
-                        'Just now';
-                    
-                    const messageDiv = document.createElement('div');
-                    messageDiv.className = `message ${isCurrentUser ? 'sent' : 'received'}`;
-                    
-                    let content = '';
-                    
-                    if (!isCurrentUser) {
-                        content += `<div class="message-user">${userData.username || userData.email.split('@')[0]}</div>`;
-                    }
-                    
-                    if (message.text) {
-                        content += `<div class="message-bubble">${message.text}</div>`;
-                    }
-                    
-                    if (message.imageUrl) {
-                        content += `<img src="${message.imageUrl}" class="message-image" alt="Chat image">`;
-                    }
-                    
-                    content += `<div class="message-time">${messageTime}</div>`;
-                    
-                    messageDiv.innerHTML = content;
-                    messagesContainer.appendChild(messageDiv);
-                    
-                    // Scroll to bottom after adding new message
-                    messagesContainer.scrollTop = messagesContainer.scrollHeight;
-                });
+    // Update all messages with new profile info
+    function updateMessagesWithNewProfile(newUsername, newProfilePic) {
+      const messages = chatMessages.querySelectorAll('.message-container');
+      messages.forEach(message => {
+        const senderEmail = message.getAttribute('data-sender-email');
+        if (senderEmail === currentUser.email) {
+          // Update username in message
+          const nameElement = message.querySelector('.message-sender');
+          if (nameElement) {
+            nameElement.textContent = newUsername;
+          }
+          
+          // Update profile picture in message
+          const avatar = message.querySelector('.message-avatar');
+          if (avatar) {
+            avatar.src = newProfilePic;
+          }
         }
+      });
+    }
 
-        // Send message
-        function sendMessage() {
-            const user = auth.currentUser;
-            if (!user) return;
-            
-            const messageText = messageInput.value.trim();
-            const file = imageUpload.files[0];
-            
-            if (messageText || file) {
-                if (file) {
-                    // Upload image first
-                    const storageRef = storage.ref(`chat_images/${Date.now()}_${file.name}`);
-                    
-                    storageRef.put(file).then(snapshot => {
-                        return snapshot.ref.getDownloadURL();
-                    }).then(downloadURL => {
-                        // Save message with image URL
-                        saveMessage(user.uid, messageText, downloadURL);
-                        imageUpload.value = '';
-                        messageInput.value = '';
-                    }).catch(error => {
-                        console.error("Error uploading image:", error);
-                    });
-                } else {
-                    // Save text message
-                    saveMessage(user.uid, messageText, '');
-                    messageInput.value = '';
-                }
-            }
+    // Load User Data
+    async function loadUserData() {
+      try {
+        const response = await fetch(SCRIPT_URL, {
+          method: 'POST',
+          body: JSON.stringify({
+            action: 'login',
+            email: currentUser.email
+          })
+        });
+        
+        const data = await response.json();
+        
+        if (data.status === 'success') {
+          currentUsername = data.user.username || currentUser.displayName || currentUser.email.split('@')[0];
+          currentUserProfilePic = data.user.profile_pic || currentUser.photoURL || "https://cdn-icons-png.flaticon.com/512/3135/3135715.png";
+        } else {
+          currentUsername = currentUser.displayName || currentUser.email.split('@')[0];
+          currentUserProfilePic = currentUser.photoURL || "https://cdn-icons-png.flaticon.com/512/3135/3135715.png";
         }
+        
+        // Update UI elements
+        userProfilePicture.src = currentUserProfilePic;
+        editableProfilePic.src = currentUserProfilePic;
+        editUsername.value = currentUsername;
+      } catch (error) {
+        console.error('Error loading user data:', error);
+        currentUsername = currentUser.displayName || currentUser.email.split('@')[0];
+        currentUserProfilePic = currentUser.photoURL || "https://cdn-icons-png.flaticon.com/512/3135/3135715.png";
+        userProfilePicture.src = currentUserProfilePic;
+        editableProfilePic.src = currentUserProfilePic;
+        editUsername.value = currentUsername;
+      }
+    }
 
-        // Save message to Firestore
-        function saveMessage(userId, text, imageUrl) {
-            db.collection('messages').add({
-                userId: userId,
-                text: text,
-                imageUrl: imageUrl,
-                timestamp: firebase.firestore.FieldValue.serverTimestamp()
-            }).catch(error => {
-                console.error("Error saving message:", error);
-            });
+    // Send Text Message
+    function sendTextMessage() {
+      const message = messageInput.value.trim();
+      if (!message || !currentUser) return;
+      
+      sendMessage({
+        type: 'text',
+        content: message
+      });
+      
+      messageInput.value = '';
+    }
+
+    // Send Message (to Firebase and Google Sheets)
+    async function sendMessage({ type, content, stickerCode }) {
+      if (!currentUser) return;
+      
+      try {
+        // Create message object
+        const message = {
+          sender_email: currentUser.email,
+          sender_name: currentUsername,
+          sender_profile_pic: currentUserProfilePic,
+          message_type: type,
+          message_content: content,
+          timestamp: firebase.database.ServerValue.TIMESTAMP,
+          status: "sent"
+        };
+        
+        // Save to Firebase Realtime Database
+        const newMessageRef = database.ref('messages').push();
+        await newMessageRef.set(message);
+        
+        // Also save to Google Sheets for permanent storage
+        await fetch(SCRIPT_URL, {
+          method: 'POST',
+          body: JSON.stringify({
+            action: 'send_message',
+            sender_email: currentUser.email,
+            message_type: type,
+            message_content: content
+          })
+        });
+      } catch (error) {
+        console.error('Error sending message:', error);
+        alert('Error sending message: ' + error.message);
+      }
+    }
+
+    // Add Message to UI
+    function addMessageToUI(message) {
+      // Check if message already exists in the UI
+      const existingMessages = chatMessages.querySelectorAll('.message-container');
+      for (let i = 0; i < existingMessages.length; i++) {
+        const msgTime = existingMessages[i].querySelector('.message-time')?.textContent;
+        const newMsgTime = new Date(message.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        
+        if (msgTime === newMsgTime) {
+          const msgContent = existingMessages[i].querySelector('p')?.textContent || 
+                            existingMessages[i].querySelector('.message-image')?.src || 
+                            existingMessages[i].querySelector('.message-sticker')?.src;
+          
+          if (msgContent === message.message_content) {
+            return; // Message already exists, don't add it again
+          }
         }
+      }
 
-        // Logout confirmation
-        logoutBtn.addEventListener('click', () => {
-            logoutModal.style.display = 'flex';
+      const messageContainer = document.createElement('div');
+      messageContainer.classList.add('message-container');
+      messageContainer.setAttribute('data-sender-email', message.sender_email);
+      
+      const isCurrentUser = message.sender_email === currentUser.email;
+      
+      // Create avatar element
+      const avatar = document.createElement('img');
+      avatar.classList.add('message-avatar');
+      avatar.src = message.sender_profile_pic || "https://cdn-icons-png.flaticon.com/512/3135/3135715.png";
+      avatar.alt = message.sender_name + "'s profile picture";
+      
+      // Create message content container
+      const messageContent = document.createElement('div');
+      messageContent.classList.add('message-content');
+      
+      // Create message div
+      const messageDiv = document.createElement('div');
+      messageDiv.classList.add('message');
+      
+      if (isCurrentUser) {
+        messageDiv.classList.add('message-sent');
+        messageContainer.style.justifyContent = 'flex-end';
+      } else {
+        messageDiv.classList.add('message-received');
+        messageContainer.style.justifyContent = 'flex-start';
+        messageContainer.appendChild(avatar);
+      }
+      
+      // Use the sender's actual name from the message object
+      const senderName = isCurrentUser ? 
+        "You" : 
+        message.sender_name || message.sender_email.split('@')[0];
+      
+      let contentHtml = '';
+      
+      if (message.message_type === 'text') {
+        contentHtml = `<p>${message.message_content}</p>`;
+      } else if (message.message_type === 'image') {
+        contentHtml = `<img src="${message.message_content}" class="message-image">`;
+      } else if (message.message_type === 'sticker') {
+        contentHtml = `<img src="${message.message_content}" class="message-sticker" alt="Sticker">`;
+      }
+      
+      const timestamp = new Date(message.timestamp);
+      const timeString = timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      
+      messageDiv.innerHTML = `
+        <div class="message-sender">${senderName}</div>
+        ${contentHtml}
+        <div class="message-time">${timeString}</div>
+      `;
+      
+      messageContent.appendChild(messageDiv);
+      messageContainer.appendChild(messageContent);
+      
+      // If it's the current user's message, add avatar after content
+      if (isCurrentUser) {
+        messageContainer.appendChild(avatar);
+      }
+      
+      chatMessages.appendChild(messageContainer);
+    }
+
+    // Handle Image Upload
+    function handleImageUpload(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      
+      const reader = new FileReader();
+      reader.onload = function(event) {
+        sendMessage({
+          type: 'image',
+          content: event.target.result
         });
+      };
+      reader.readAsDataURL(file);
+      imageUpload.value = '';
+    }
 
-        cancelLogout.addEventListener('click', () => {
-            logoutModal.style.display = 'none';
-        });
+    // Toggle Sticker Selector
+    function toggleStickerSelector() {
+      stickerSelector.style.display = stickerSelector.style.display === 'none' ? 'flex' : 'none';
+    }
 
-        confirmLogout.addEventListener('click', () => {
-            auth.signOut();
-            logoutModal.style.display = 'none';
-        });
-
-        // Send message on button click
-        sendBtn.addEventListener('click', sendMessage);
-
-        // Send message on Enter key
-        messageInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') {
-                sendMessage();
-            }
-        });
-
-        // Open file dialog when attachment button is clicked
-        attachmentBtn.addEventListener('click', () => {
-            imageUpload.click();
-        });
-    </script>
+    // Scroll to bottom of chat
+    function scrollToBottom() {
+      chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+  </script>
 </body>
-    </html>
+</html>
